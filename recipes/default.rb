@@ -1,18 +1,19 @@
-list = case node.platform
+case node.platform
 when "ubuntu" then
   %w(xserver-xorg-core xvfb)
 when "centos" then
   %w(xorg-x11-server-Xvfb mesa-libGL)
-end
+end.each { |pkg| package(pkg) { action :install } }
 
-list.each { |pkg| package(pkg) { action :install } }
-
-cookbook_file "/etc/init.d/xvfb" do
-  owner "root"
-  group "root"
-  mode  "0755"
-  source "etc/init.d/xvfb.sh"
-
+template "/etc/init.d/xvfb" do
+  source "xvfb.sh.erb"
+  mode 00755
+  variables(
+    :display => node[:xvfb][:display],
+    :screen_number => node[:xvfb][:screen][:number],
+    :screen_resolution => node[:xvfb][:screen][:resolution],
+    :other_args => node[:xvfb][:other_args]
+  )
   notifies(:restart, "service[xvfb]")
 end
 
